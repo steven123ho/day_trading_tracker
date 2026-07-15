@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600&family=Spectral:wght@500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background-color: #0a0c12;
+  --background-soft-color: #11151c;
+  --card-color: #12161f;
+  --card-light-color: #1a202c;
+  --primary-color: #22d3ee;
+  --primary-dark-color: #0e7490;
+  --border-color: #1f2937;
+  --muted-color: #94a3b8;
+  --success-color: #22c55e;
+  --danger-color: #ef4444;
+  --font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --text-body-color: #e2e8f0;
+  --text-strong-color: #f8fafc;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-body-color);
+  font-feature-settings: "tnum";
+  font-family: var(--font-family);
+  min-height: 100vh;
+  position: relative;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Futuristic sharp inputs */
+input, select, textarea {
+  background-color: #11151c;
+  border-color: #1f2937;
+  color: #e2e8f0;
+  border-radius: 6px;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #22d3ee;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5);
+}
+
+/* Sharp buttons, minimal softness */
+button {
+  transition: all 0.08s ease;
+  border-radius: 6px;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Cards and surfaces are crisp */
+.bg-card, .bg-card-light {
+  border-radius: 8px;
+}
+
+.bg-background {
+  background-color: var(--background-color) !important;
+}
+
+.bg-background-light {
+  background-color: var(--background-soft-color) !important;
+}
+
+.bg-card {
+  background-color: var(--card-color) !important;
+}
+
+.bg-card-light {
+  background-color: var(--card-light-color) !important;
+}
+
+.border-border {
+  border-color: var(--border-color) !important;
+}
+
+.text-muted {
+  color: var(--muted-color) !important;
+}
+
+.text-white {
+  color: var(--text-strong-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+  color: #050505 !important;
+}
+
+.hover\:bg-primary-dark:hover {
+  background-color: var(--primary-dark-color) !important;
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+/* Recharts dark tooltip */
+.recharts-tooltip {
+  background: #11151c !important;
+  border: 1px solid #1f2937 !important;
+  color: #e2e8f0 !important;
+}
+
+:root[data-theme='neon'] {
+  --background-color: #030712;
+  --background-soft-color: #0f172a;
+  --card-color: #050f2c;
+  --card-light-color: #101b3c;
+  --primary-color: #60a5fa;
+  --primary-dark-color: #1d4ed8;
+  --border-color: #1f2a44;
+  --muted-color: #9bb5ff;
+  --text-body-color: #dbeafe;
+  --text-strong-color: #f8fafc;
+}
+
+:root[data-theme='stealth'] {
+  --background-color: #050505;
+  --background-soft-color: #111318;
+  --card-color: #0f1115;
+  --card-light-color: #151921;
+  --primary-color: #22d3ee;
+  --primary-dark-color: #0f9fc0;
+  --border-color: #2a2f3a;
+  --muted-color: #7c879b;
+  --text-body-color: #d1d5db;
+  --text-strong-color: #f8fafc;
+}
+
+:root[data-theme='aurora'] {
+  --background-color: #f8fafc;
+  --background-soft-color: #e2e8f0;
+  --card-color: #ffffff;
+  --card-light-color: #e2e8f0;
+  --primary-color: #0891b2;
+  --primary-dark-color: #0e7490;
+  --border-color: #d0d6e0;
+  --muted-color: #4b5563;
+  --font-family: 'Space Grotesk', 'Inter', sans-serif;
+  --text-body-color: #0f172a;
+  --text-strong-color: #0f172a;
+}
+
+:root[data-theme='paper'] {
+  --background-color: #f3f0e7;
+  --background-soft-color: #ebe2cf;
+  --card-color: #fffaf0;
+  --card-light-color: #fef6dc;
+  --primary-color: #dc2626;
+  --primary-dark-color: #b91c1c;
+  --border-color: #e0d4b8;
+  --muted-color: #6b4f2c;
+  --font-family: 'Spectral', 'Georgia', serif;
+  --text-body-color: #2b2111;
+  --text-strong-color: #1f1306;
+}
+
+:root[data-theme='sunset'] {
+  --background-color: #170f1c;
+  --background-soft-color: #211229;
+  --card-color: #1f1426;
+  --card-light-color: #2b1a34;
+  --primary-color: #fb923c;
+  --primary-dark-color: #ea580c;
+  --border-color: #3b1f46;
+  --muted-color: #f4c7a4;
+  --text-body-color: #f8fafc;
+  --text-strong-color: #f9fafb;
+}
+
+:root[data-font='mono'] {
+  --font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
+}
+
+:root[data-font='serif'] {
+  --font-family: 'Spectral', 'Georgia', serif;
+}
+
+:root[data-density='compact'] body {
+  font-size: 0.95rem;
+}
+
+:root[data-density='relaxed'] body {
+  font-size: 1.05rem;
+}
+
+:root[data-grid='true'] body {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px;
+  background-position: 0 0, 0 0;
+}
+
+:root[data-contrast='true'] .bg-card,
+:root[data-contrast='true'] .bg-card-light {
+  box-shadow: 0 0 25px rgba(34, 211, 238, 0.08);
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
