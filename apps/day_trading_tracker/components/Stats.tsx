@@ -47,16 +47,18 @@ export default function Stats() {
 
   let cumulativeProfit = 0
   let cumulativeLoss = 0
+  let runningBalance = 0
   const chartData = Array.from(dateTotals.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, pnlValue]) => {
       if (pnlValue >= 0) cumulativeProfit += pnlValue
       else cumulativeLoss += Math.abs(pnlValue)
+      runningBalance += pnlValue
       return {
         date,
         profit: cumulativeProfit,
         loss: cumulativeLoss,
-        net: cumulativeProfit - cumulativeLoss,
+        net: runningBalance,
       }
     })
 
@@ -109,12 +111,12 @@ export default function Stats() {
                 <YAxis stroke="#64748b" tickFormatter={(v) => `$${v}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#12161f', border: '1px solid #1f2937', borderRadius: '8px' }}
-                  formatter={(value: number, name) => [formatCurrency(value), name === 'profit' ? 'Profit' : 'Loss']}
+                  formatter={(value: number, name: string | number) => [formatCurrency(value), typeof name === 'string' ? name.charAt(0).toUpperCase() + name.slice(1) : String(name)]}
                 />
-                <Legend formatter={(value) => (value === 'profit' ? 'Profit' : value === 'loss' ? 'Loss' : 'Net')} />
-                <Line type="monotone" dataKey="profit" stroke="#22c55e" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="loss" stroke="#ef4444" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Legend />
+                <Line type="monotone" dataKey="profit" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e', r: 3 }} />
+                <Line type="monotone" dataKey="loss" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 3 }} />
+                <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={{ fill: '#3b82f6', r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

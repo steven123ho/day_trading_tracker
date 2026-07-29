@@ -7,15 +7,19 @@ import { Download } from 'lucide-react'
 export default function ExportButton() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const exportCSV = async () => {
     setLoading(true)
+    setError(null)
+    
     const { data, error } = await supabase
       .from('trades')
-      .select('id, trade_date, symbol, direction, entry_price, exit_price, position_size, stop_loss, take_profit, fees, pnl, pnl_pips, status, notes, accounts(name), strategies(name)')
+      .select('id, trade_date, symbol, direction, entry_price, exit_price, stop_loss, take_profit, fees, pnl, pnl_pips, status, notes, accounts(name), strategies(name)')
       .order('trade_date', { ascending: false })
 
     if (error || !data) {
+      setError(error?.message || 'Failed to export trades')
       setLoading(false)
       return
     }
@@ -27,7 +31,6 @@ export default function ExportButton() {
       'Direction',
       'Entry',
       'Exit',
-      'Contracts',
       'Stop Loss',
       'Take Profit',
       'Fees',
@@ -47,7 +50,6 @@ export default function ExportButton() {
         row.direction,
         row.entry_price,
         row.exit_price ?? '',
-        row.position_size,
         row.stop_loss ?? '',
         row.take_profit ?? '',
         row.fees ?? 0,
@@ -60,24 +62,34 @@ export default function ExportButton() {
       ].join(',')),
     ].join('\n')
 
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `trades-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+    try {
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const date = new Date()
+      const filename = `trades-${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}.csv`
+      a.download = filename
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      setError('Failed to download CSV')
+    }
+    
     setLoading(false)
   }
 
   return (
-    <button
-      onClick={exportCSV}
-      disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 bg-card-light hover:bg-card text-white rounded-lg border border-border transition disabled:opacity-50"
-    >
-      <Download size={18} />
-      {loading ? 'Exporting...' : 'Export CSV'}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={exportCSV}
+        disabled={loading}
+        className="flex items-center gap-2 px-4 py-2 bg-card-light hover:bg-card text-white rounded-lg border border-border transition disabled:opacity-50"
+      >
+        <Download size={18} />
+        {loading ? 'Exporting...' : 'Export CSV'}
+      </button>
+      {error && <div className="text-danger text-sm">{error}</div>}
+    </div>
   )
 }

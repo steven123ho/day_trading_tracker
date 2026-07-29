@@ -15,7 +15,14 @@ export function formatCurrency(value: number, currency = 'USD') {
 }
 
 export function formatDate(date: string | Date) {
-  const d = typeof date === 'string' ? new Date(date) : date
+  let d: Date
+  if (typeof date === 'string') {
+    // Parse as local date to avoid UTC conversion issues
+    const [year, month, day] = date.split('-').map(Number)
+    d = new Date(year, month - 1, day)
+  } else {
+    d = date
+  }
   return d.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -24,5 +31,8 @@ export function formatDate(date: string | Date) {
 }
 
 export function formatDateInput(date: Date) {
-  return date.toISOString().split('T')[0]
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
