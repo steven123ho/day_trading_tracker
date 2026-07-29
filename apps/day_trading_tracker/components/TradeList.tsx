@@ -90,8 +90,8 @@ export default function TradeList() {
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <table className="w-full text-left text-white/90">
-          <thead className="bg-card-light/80">
+        <table className="w-full text-left text-white">
+          <thead className="bg-card-light">
             <tr>
               <th className="p-3 font-medium text-muted text-xs tracking-widest">DATE</th>
               <th className="p-3 font-medium text-muted text-xs tracking-widest">INSTRUMENT</th>

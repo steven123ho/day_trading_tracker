@@ -90,6 +90,18 @@ button:hover {
   color: var(--text-strong-color) !important;
 }
 
+.hover\:text-white:hover {
+  color: var(--text-strong-color) !important;
+}
+
+.hover\:bg-card-light:hover {
+  background-color: var(--card-light-color) !important;
+}
+
+.hover\:bg-card:hover {
+  background-color: var(--card-color) !important;
+}
+
 .bg-primary {
   background-color: var(--primary-color) !important;
   color: #050505 !important;
