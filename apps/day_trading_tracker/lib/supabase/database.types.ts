@@ -14,6 +14,7 @@ export interface Database {
           id: string
           username: string | null
           full_name: string | null
+          rules: string | null
           created_at: string
           updated_at: string
         }
@@ -21,6 +22,7 @@ export interface Database {
           id: string
           username?: string | null
           full_name?: string | null
+          rules?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -28,6 +30,7 @@ export interface Database {
           id?: string
           username?: string | null
           full_name?: string | null
+          rules?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -192,6 +195,54 @@ export interface Database {
           url?: string
           caption?: string | null
           created_at?: string
+        }
+        Relationships: never[]
+      }
+      sticky_notes: {
+        Row: {
+          id: string
+          user_id: string
+          content: string | null
+          x: number
+          y: number
+          width: number
+          height: number
+          rotation: number
+          color: string | null
+          transparent: boolean
+          z_index: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content?: string | null
+          x?: number
+          y?: number
+          width?: number
+          height?: number
+          rotation?: number
+          color?: string | null
+          transparent?: boolean
+          z_index?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content?: string | null
+          x?: number
+          y?: number
+          width?: number
+          height?: number
+          rotation?: number
+          color?: string | null
+          transparent?: boolean
+          z_index?: number
+          created_at?: string
+          updated_at?: string
         }
         Relationships: never[]
       }
