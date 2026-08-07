@@ -23,7 +23,18 @@ export default function Stats() {
   }, [])
 
   async function loadTrades() {
-    const { data } = await supabase.from('trades').select('trade_date, pnl, direction, status')
+    const { data: user } = await supabase.auth.getUser()
+    if (!user.user) {
+      setTrades([])
+      setLoading(false)
+      return
+    }
+
+    const { data } = await supabase
+      .from('trades')
+      .select('trade_date, pnl, direction, status')
+      .eq('user_id', user.user.id)
+
     setTrades((data as Trade[]) || [])
     setLoading(false)
   }

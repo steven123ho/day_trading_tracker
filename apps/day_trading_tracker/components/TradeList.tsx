@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { Pencil, Trash2, PlusCircle } from 'lucide-react'
 import TradeModal from './TradeModal'
 import ExportButton from './ExportButton'
+import SignInModal from './SignInModal'
 import type { TradeFormValues } from './TradeForm'
 
 interface TradeRow {
@@ -32,6 +33,8 @@ export default function TradeList() {
   const [trades, setTrades] = useState<TradeRow[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
   const [editingTrade, setEditingTrade] = useState<(Partial<TradeFormValues> & { id?: string }) | undefined>(undefined)
 
   const [search, setSearch] = useState('')
@@ -142,7 +145,16 @@ export default function TradeList() {
         <div className="flex items-center gap-2">
           <ExportButton />
           <button
-            onClick={() => { setEditingTrade(undefined); setModalOpen(true) }}
+            onClick={async () => {
+              const { data: user } = await supabase.auth.getUser()
+              if (!user.user) {
+                setSignInAction('add a new trade')
+                setSignInOpen(true)
+                return
+              }
+              setEditingTrade(undefined)
+              setModalOpen(true)
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-black font-semibold rounded-lg transition"
           >
             <PlusCircle size={18} />
@@ -277,7 +289,16 @@ export default function TradeList() {
                   {trades.length === 0 ? (
                     <>
                       No trades yet.{' '}
-                      <button onClick={() => { setEditingTrade(undefined); setModalOpen(true) }} className="text-primary hover:underline">
+                      <button onClick={async () => {
+                        const { data: user } = await supabase.auth.getUser()
+                        if (!user.user) {
+                          setSignInAction('add a new trade')
+                          setSignInOpen(true)
+                          return
+                        }
+                        setEditingTrade(undefined)
+                        setModalOpen(true)
+                      }} className="text-primary hover:underline">
                         Add your first trade
                       </button>
                       .
@@ -339,11 +360,17 @@ export default function TradeList() {
         </table>
       </div>
 
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
+
       <TradeModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         trade={editingTrade}
-        onSaved={loadTrades}
+        onSaved={() => { setModalOpen(false); loadTrades() }}
       />
     </div>
   )

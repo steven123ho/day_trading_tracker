@@ -15,6 +15,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import TradeModal from './TradeModal'
+import SignInModal from './SignInModal'
 
 interface Trade {
   id: string
@@ -33,6 +34,8 @@ export default function Calendar({ onTradeSaved }: CalendarProps) {
   const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
   const [modalDate, setModalDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
 
   const monthStart = startOfMonth(currentMonth)
@@ -49,9 +52,17 @@ export default function Calendar({ onTradeSaved }: CalendarProps) {
     const start = format(monthStart, 'yyyy-MM-dd')
     const end = format(monthEnd, 'yyyy-MM-dd')
 
+    const { data: user } = await supabase.auth.getUser()
+    if (!user.user) {
+      setTrades([])
+      setLoading(false)
+      return
+    }
+
     const { data } = await supabase
       .from('trades')
       .select('id, trade_date, pnl, status')
+      .eq('user_id', user.user.id)
       .gte('trade_date', start)
       .lte('trade_date', end)
 
@@ -106,7 +117,13 @@ export default function Calendar({ onTradeSaved }: CalendarProps) {
               <button
                 key={day.toISOString()}
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  const { data: user } = await supabase.auth.getUser()
+                  if (!user.user) {
+                    setSignInAction('add a new trade')
+                    setSignInOpen(true)
+                    return
+                  }
                   setModalDate(format(day, 'yyyy-MM-dd'))
                   setModalOpen(true)
                 }}
@@ -128,6 +145,12 @@ export default function Calendar({ onTradeSaved }: CalendarProps) {
           })}
         </div>
       )}
+
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
 
       <TradeModal
         open={modalOpen}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Trash2, ArrowDownRight, Edit, ChevronUp, ChevronDown } from 'lucide-react'
 import StickyNoteModal from './StickyNoteModal'
+import SignInModal from './SignInModal'
 
 interface Note {
   id: string
@@ -48,6 +49,8 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [boardOpen, setBoardOpen] = useState(true)
   const [topZ, setTopZ] = useState(0)
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
   const draggingRef = useRef<{ id: string; startX: number; startY: number; noteX: number; noteY: number } | null>(null)
   const resizingRef = useRef<{ id: string; startW: number; startH: number; startX: number; startY: number } | null>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -99,7 +102,10 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
 
   async function loadNotes() {
     const { data: session } = await supabase.auth.getUser()
-    if (!session.user) return
+    if (!session.user) {
+      setLoading(false)
+      return
+    }
 
     const { data } = await supabase
       .from('sticky_notes')
@@ -165,7 +171,14 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
     updateNote(id, { z_index: nextZ })
   }
 
-  function addNote() {
+  async function addNote() {
+    const { data: session } = await supabase.auth.getUser()
+    if (!session.user) {
+      setSignInAction('add a sticky note')
+      setSignInOpen(true)
+      return
+    }
+
     if (!boardOpen) {
       pendingAddRef.current = true
       setBoardOpen(true)
@@ -264,7 +277,7 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
               </button>
             )}
             <h1 className="text-xl font-semibold text-white text-left truncate min-w-0">
-              Trading Journal
+              Trading Dashboard
             </h1>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -276,7 +289,15 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
             </button>
             {onNewTrade && (
               <button
-                onClick={onNewTrade}
+                onClick={async () => {
+                  const { data: session } = await supabase.auth.getUser()
+                  if (!session.user) {
+                    setSignInAction('add a new trade')
+                    setSignInOpen(true)
+                    return
+                  }
+                  onNewTrade()
+                }}
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-primary hover:bg-primary-dark text-black font-semibold rounded-lg transition shadow-[0_0_12px_rgba(34,211,238,0.6)] ring-1 ring-primary/50 whitespace-nowrap"
               >
                 New Trade
@@ -373,6 +394,12 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
           </button>
         </div>
       )}
+
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
 
       <StickyNoteModal
         note={modalNote}

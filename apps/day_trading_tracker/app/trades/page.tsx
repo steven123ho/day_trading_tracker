@@ -8,7 +8,9 @@ export const metadata = {
 export default function TradesPage() {
   return (
     <AuthCheck>
-      <TradeList />
+      <div className="min-h-screen">
+        <TradeList />
+      </div>
     </AuthCheck>
   )
 }

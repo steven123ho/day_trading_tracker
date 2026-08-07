@@ -69,7 +69,10 @@ export default function RulesEditor() {
 
   async function loadRules() {
     const { data: session } = await supabase.auth.getUser()
-    if (!session.user) return
+    if (!session.user) {
+      setLoading(false)
+      return
+    }
 
     const { data } = await supabase
       .from('profiles')

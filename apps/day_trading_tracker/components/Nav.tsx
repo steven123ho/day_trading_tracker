@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { LayoutDashboard, List, Settings, Target, LogOut } from 'lucide-react'
+import { LayoutDashboard, List, Settings, Target, LogOut, LogIn } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -16,7 +17,11 @@ const links = [
 
 const HOVER_DELAY = 300
 
-export default function Nav() {
+interface NavProps {
+  user: User | null
+}
+
+export default function Nav({ user }: NavProps) {
   const pathname = usePathname()
   const supabase = createClient()
   const [collapsed, setCollapsed] = useState(true)
@@ -75,17 +80,31 @@ export default function Nav() {
         ))}
       </ul>
 
-      <button
-        onClick={signOut}
-        className={cn(
-          'flex items-center text-muted hover:text-danger hover:bg-red-500/10 rounded-lg transition',
-          collapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
-        )}
-        title="Sign Out"
-      >
-        <LogOut size={20} />
-        {!collapsed && <span>Sign Out</span>}
-      </button>
+      {user ? (
+        <button
+          onClick={signOut}
+          className={cn(
+            'flex items-center text-muted hover:text-danger hover:bg-red-500/10 rounded-lg transition',
+            collapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
+          )}
+          title="Sign Out"
+        >
+          <LogOut size={20} />
+          {!collapsed && <span>Sign Out</span>}
+        </button>
+      ) : (
+        <Link
+          href="/"
+          className={cn(
+            'flex items-center text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition',
+            collapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
+          )}
+          title="Sign In"
+        >
+          <LogIn size={20} />
+          {!collapsed && <span>Sign In</span>}
+        </Link>
+      )}
     </nav>
   )
 }

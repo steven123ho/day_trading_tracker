@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Save, BookOpen } from 'lucide-react'
 import RichTextEditor from './RichTextEditor'
+import SignInModal from './SignInModal'
 
 export default function DashboardRules() {
   const supabase = createClient()
@@ -11,6 +12,8 @@ export default function DashboardRules() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
 
   useEffect(() => {
     loadRules()
@@ -18,7 +21,10 @@ export default function DashboardRules() {
 
   async function loadRules() {
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setLoading(false)
+      return
+    }
 
     const { data } = await supabase
       .from('profiles')
@@ -34,7 +40,11 @@ export default function DashboardRules() {
 
   async function saveRules() {
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setSignInAction('save your rules')
+      setSignInOpen(true)
+      return
+    }
 
     setSaving(true)
     const { error } = await supabase
@@ -70,6 +80,12 @@ export default function DashboardRules() {
         value={rules}
         onChange={setRules}
         placeholder="Type your trading rules and reminders here..."
+      />
+
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
       />
     </div>
   )

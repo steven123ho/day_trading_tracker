@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function Auth() {
@@ -96,6 +97,12 @@ export default function Auth() {
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </button>
+          </p>
+
+          <p className="text-sm text-center text-muted mt-2">
+            <Link href="/dashboard" className="text-primary hover:underline">
+              Continue as guest
+            </Link>
           </p>
         </div>
       </form>

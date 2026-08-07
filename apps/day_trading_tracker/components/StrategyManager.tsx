@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Json } from '@/lib/supabase/database.types'
 import { Plus, Trash2, CheckSquare, Square } from 'lucide-react'
+import SignInModal from './SignInModal'
 
 interface Rule {
   id: string
@@ -28,6 +29,8 @@ export default function StrategyManager() {
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newRule, setNewRule] = useState<Record<string, string>>({})
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
 
   useEffect(() => {
     load()
@@ -35,7 +38,10 @@ export default function StrategyManager() {
 
   async function load() {
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setLoading(false)
+      return
+    }
 
     const { data } = await supabase
       .from('strategies')
@@ -53,10 +59,13 @@ export default function StrategyManager() {
 
   async function addStrategy(e: React.FormEvent) {
     e.preventDefault()
-    if (!newName.trim()) return
-
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setSignInAction('add a strategy')
+      setSignInOpen(true)
+      return
+    }
+    if (!newName.trim()) return
 
     await supabase.from('strategies').insert({
       user_id: user.user.id,
@@ -212,6 +221,11 @@ export default function StrategyManager() {
           ))
         )}
       </div>
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
     </div>
   )
 }

@@ -6,6 +6,7 @@ create table if not exists public.profiles (
   username text,
   full_name text,
   rules text default '',
+  theme jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

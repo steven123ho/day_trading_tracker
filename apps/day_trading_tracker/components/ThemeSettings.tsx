@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Paintbrush, Type, Sparkles } from 'lucide-react'
 
 const THEME_OPTIONS = [
@@ -25,84 +26,82 @@ const DENSITY_OPTIONS = [
 ]
 
 export default function ThemeSettings() {
+  const supabase = createClient()
   const [mounted, setMounted] = useState(false)
   const [theme, setTheme] = useState('default')
   const [font, setFont] = useState('grotesk')
   const [density, setDensity] = useState('default')
   const [grid, setGrid] = useState(false)
   const [contrast, setContrast] = useState(false)
+  const isFirstSave = useRef(true)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const storedTheme = localStorage.getItem('journal-theme') || 'default'
-    const storedFont = localStorage.getItem('journal-font') || 'grotesk'
-    const storedDensity = localStorage.getItem('journal-density') || 'default'
-    const storedGrid = localStorage.getItem('journal-grid') === 'true'
-    const storedContrast = localStorage.getItem('journal-contrast') === 'true'
+    async function load() {
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) {
+        setMounted(true)
+        return
+      }
 
-    setTheme(storedTheme)
-    setFont(storedFont)
-    setDensity(storedDensity)
-    setGrid(storedGrid)
-    setContrast(storedContrast)
-    setMounted(true)
-  }, [])
+      const { data } = await supabase
+        .from('profiles')
+        .select('theme')
+        .eq('id', user.user.id)
+        .single()
 
-  useEffect(() => {
-    if (!mounted) return
-    if (typeof window === 'undefined') return
-
-    localStorage.setItem('journal-theme', theme)
-    applyTheme(theme)
-  }, [theme, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    if (typeof window === 'undefined') return
-
-    localStorage.setItem('journal-font', font)
-    document.documentElement.dataset.font = font
-  }, [font, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    if (typeof window === 'undefined') return
-
-    localStorage.setItem('journal-density', density)
-    if (density === 'default') {
-      document.documentElement.removeAttribute('data-density')
-    } else {
-      document.documentElement.dataset.density = density
+      if (data?.theme) {
+        const t = data.theme as Record<string, any>
+        setTheme(t.theme || 'default')
+        setFont(t.font || 'grotesk')
+        setDensity(t.density || 'default')
+        setGrid(!!t.grid)
+        setContrast(!!t.contrast)
+      }
+      setMounted(true)
     }
-  }, [density, mounted])
+    load()
+  }, [supabase])
+
+  const settings = useMemo(() => ({ theme, font, density, grid, contrast }), [theme, font, density, grid, contrast])
 
   useEffect(() => {
     if (!mounted) return
     if (typeof window === 'undefined') return
 
-    localStorage.setItem('journal-grid', String(grid))
-    if (grid) document.documentElement.dataset.grid = 'true'
-    else document.documentElement.removeAttribute('data-grid')
-  }, [grid, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    if (typeof window === 'undefined') return
-
-    localStorage.setItem('journal-contrast', String(contrast))
-    if (contrast) document.documentElement.dataset.contrast = 'true'
-    else document.documentElement.removeAttribute('data-contrast')
-  }, [contrast, mounted])
-
-  useEffect(() => {
-    // apply defaults on first hydration
-    if (!mounted) return
     applyTheme(theme)
     document.documentElement.dataset.font = font
-    if (density !== 'default') document.documentElement.dataset.density = density
-    if (grid) document.documentElement.dataset.grid = 'true'
-    if (contrast) document.documentElement.dataset.contrast = 'true'
-  }, [mounted])
+    if (density !== 'default') {
+      document.documentElement.dataset.density = density
+    } else {
+      document.documentElement.removeAttribute('data-density')
+    }
+    if (grid) {
+      document.documentElement.dataset.grid = 'true'
+    } else {
+      document.documentElement.removeAttribute('data-grid')
+    }
+    if (contrast) {
+      document.documentElement.dataset.contrast = 'true'
+    } else {
+      document.documentElement.removeAttribute('data-contrast')
+    }
+  }, [theme, font, density, grid, contrast, mounted])
+
+  useEffect(() => {
+    if (!mounted) return
+    if (isFirstSave.current) {
+      isFirstSave.current = false
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) return
+      await supabase.from('profiles').update({ theme: settings }).eq('id', user.user.id)
+    }, 500)
+
+    return () => clearTimeout(timeout)
+  }, [settings, mounted, supabase])
 
   const description = {
     default: 'Balanced neon contrast with cyan accents.',
