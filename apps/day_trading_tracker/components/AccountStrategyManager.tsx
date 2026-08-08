@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Trash2 } from 'lucide-react'
+import SignInModal from './SignInModal'
 
 interface Account {
   id: string
@@ -25,6 +26,8 @@ export default function AccountStrategyManager() {
   const [newAccount, setNewAccount] = useState('')
   const [newStrategy, setNewStrategy] = useState('')
   const [newStrategyColor, setNewStrategyColor] = useState('#3b82f6')
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
 
   useEffect(() => {
     load()
@@ -45,9 +48,13 @@ export default function AccountStrategyManager() {
 
   async function addAccount(e: React.FormEvent) {
     e.preventDefault()
-    if (!newAccount.trim()) return
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setSignInAction('add a trading account')
+      setSignInOpen(true)
+      return
+    }
+    if (!newAccount.trim()) return
 
     await supabase.from('accounts').insert({ user_id: user.user.id, name: newAccount.trim() })
     setNewAccount('')
@@ -62,9 +69,13 @@ export default function AccountStrategyManager() {
 
   async function addStrategy(e: React.FormEvent) {
     e.preventDefault()
-    if (!newStrategy.trim()) return
     const { data: user } = await supabase.auth.getUser()
-    if (!user.user) return
+    if (!user.user) {
+      setSignInAction('add a strategy')
+      setSignInOpen(true)
+      return
+    }
+    if (!newStrategy.trim()) return
 
     await supabase.from('strategies').insert({ user_id: user.user.id, name: newStrategy.trim(), color: newStrategyColor })
     setNewStrategy('')
@@ -140,6 +151,11 @@ export default function AccountStrategyManager() {
           {strategies.length === 0 && <li className="text-muted text-sm">No strategies yet.</li>}
         </ul>
       </div>
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
     </div>
   )
 }

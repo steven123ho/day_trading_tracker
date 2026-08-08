@@ -1,43 +1,113 @@
 'use client'
 
 import { useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+function applyTheme(theme: string) {
+  if (typeof document === 'undefined') return
+  if (theme === 'default') {
+    document.documentElement.removeAttribute('data-theme')
+  } else {
+    document.documentElement.dataset.theme = theme
+  }
+}
 
 export default function ThemeInitializer() {
+  const supabase = createClient()
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const theme = localStorage.getItem('journal-theme') || 'default'
-    const font = localStorage.getItem('journal-font') || 'grotesk'
-    const density = localStorage.getItem('journal-density') || 'default'
-    const grid = localStorage.getItem('journal-grid') === 'true'
-    const contrast = localStorage.getItem('journal-contrast') === 'true'
+    document.documentElement.dataset.font = 'grotesk'
 
-    if (theme === 'default') {
-      document.documentElement.removeAttribute('data-theme')
-    } else {
-      document.documentElement.dataset.theme = theme
+    async function load() {
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('fj-theme')
+          if (saved) {
+            try {
+              const t = JSON.parse(saved)
+              if (t.theme) applyTheme(t.theme)
+              if (t.font) document.documentElement.dataset.font = t.font
+              if (t.density && t.density !== 'default') {
+                document.documentElement.dataset.density = t.density
+              } else {
+                document.documentElement.removeAttribute('data-density')
+              }
+              if (t.grid) {
+                document.documentElement.dataset.grid = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-grid')
+              }
+              if (t.contrast) {
+                document.documentElement.dataset.contrast = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-contrast')
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        return
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('theme')
+        .eq('id', user.user.id)
+        .single()
+
+      if (!data?.theme) {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('fj-theme')
+          if (saved) {
+            try {
+              const t = JSON.parse(saved)
+              if (t.theme) applyTheme(t.theme)
+              if (t.font) document.documentElement.dataset.font = t.font
+              if (t.density && t.density !== 'default') {
+                document.documentElement.dataset.density = t.density
+              } else {
+                document.documentElement.removeAttribute('data-density')
+              }
+              if (t.grid) {
+                document.documentElement.dataset.grid = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-grid')
+              }
+              if (t.contrast) {
+                document.documentElement.dataset.contrast = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-contrast')
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        return
+      }
+
+      const t = data.theme as Record<string, any>
+      if (t.theme) applyTheme(t.theme)
+      if (t.font) document.documentElement.dataset.font = t.font
+      if (t.density && t.density !== 'default') {
+        document.documentElement.dataset.density = t.density
+      } else {
+        document.documentElement.removeAttribute('data-density')
+      }
+      if (t.grid) {
+        document.documentElement.dataset.grid = 'true'
+      } else {
+        document.documentElement.removeAttribute('data-grid')
+      }
+      if (t.contrast) {
+        document.documentElement.dataset.contrast = 'true'
+      } else {
+        document.documentElement.removeAttribute('data-contrast')
+      }
     }
 
-    document.documentElement.dataset.font = font
-
-    if (density !== 'default') {
-      document.documentElement.dataset.density = density
-    } else {
-      document.documentElement.removeAttribute('data-density')
-    }
-
-    if (grid) {
-      document.documentElement.dataset.grid = 'true'
-    } else {
-      document.documentElement.removeAttribute('data-grid')
-    }
-
-    if (contrast) {
-      document.documentElement.dataset.contrast = 'true'
-    } else {
-      document.documentElement.removeAttribute('data-contrast')
-    }
-  }, [])
+    load()
+  }, [supabase])
 
   return null
 }

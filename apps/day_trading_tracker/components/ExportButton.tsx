@@ -12,10 +12,18 @@ export default function ExportButton() {
   const exportCSV = async () => {
     setLoading(true)
     setError(null)
-    
+
+    const { data: user } = await supabase.auth.getUser()
+    if (!user.user) {
+      setError('You must be signed in to export')
+      setLoading(false)
+      return
+    }
+
     const { data, error } = await supabase
       .from('trades')
       .select('id, trade_date, symbol, direction, entry_price, exit_price, stop_loss, take_profit, fees, pnl, pnl_pips, status, notes, accounts(name), strategies(name)')
+      .eq('user_id', user.user.id)
       .order('trade_date', { ascending: false })
 
     if (error || !data) {

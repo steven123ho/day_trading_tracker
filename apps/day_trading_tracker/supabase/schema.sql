@@ -5,6 +5,8 @@ create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   username text,
   full_name text,
+  rules text default '',
+  theme jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -67,12 +69,30 @@ create table if not exists public.trade_images (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Sticky notes on dashboard
+create table if not exists public.sticky_notes (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  content text default '',
+  x numeric(12,2) default 0,
+  y numeric(12,2) default 0,
+  width numeric(12,2) default 200,
+  height numeric(12,2) default 160,
+  rotation numeric(8,4) default 0,
+  color text default '#facc15',
+  transparent boolean default false,
+  z_index integer default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Enable RLS
 alter table public.profiles enable row level security;
 alter table public.accounts enable row level security;
 alter table public.strategies enable row level security;
 alter table public.trades enable row level security;
 alter table public.trade_images enable row level security;
+alter table public.sticky_notes enable row level security;
 
 -- Profiles policies
 create policy "Users can view own profile"
@@ -129,6 +149,19 @@ create policy "Users can create own trade images"
 
 create policy "Users can delete own trade images"
   on public.trade_images for delete using (auth.uid() = user_id);
+
+-- Sticky notes policies
+create policy "Users can view own sticky notes"
+  on public.sticky_notes for select using (auth.uid() = user_id);
+
+create policy "Users can create own sticky notes"
+  on public.sticky_notes for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own sticky notes"
+  on public.sticky_notes for update using (auth.uid() = user_id);
+
+create policy "Users can delete own sticky notes"
+  on public.sticky_notes for delete using (auth.uid() = user_id);
 
 -- Functions
 create or replace function public.handle_new_user()

@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Pencil, Trash2, PlusCircle } from 'lucide-react'
 import TradeModal from './TradeModal'
+import ExportButton from './ExportButton'
+import SignInModal from './SignInModal'
 import type { TradeFormValues } from './TradeForm'
 
 interface TradeRow {
@@ -31,7 +33,20 @@ export default function TradeList() {
   const [trades, setTrades] = useState<TradeRow[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [signInOpen, setSignInOpen] = useState(false)
+  const [signInAction, setSignInAction] = useState('')
   const [editingTrade, setEditingTrade] = useState<(Partial<TradeFormValues> & { id?: string }) | undefined>(undefined)
+
+  const [search, setSearch] = useState('')
+  const [direction, setDirection] = useState<'all' | 'long' | 'short'>('all')
+  const [status, setStatus] = useState<'all' | 'open' | 'closed'>('all')
+  const [accountId, setAccountId] = useState('all')
+  const [strategyId, setStrategyId] = useState('all')
+  const [followedRules, setFollowedRules] = useState<'all' | 'true' | 'false'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [pnlMin, setPnlMin] = useState('')
+  const [pnlMax, setPnlMax] = useState('')
 
   useEffect(() => {
     loadTrades()
@@ -75,18 +90,180 @@ export default function TradeList() {
     loadTrades()
   }
 
+  const accountOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    trades.forEach((t) => { if (t.account_id) map.set(t.account_id, t.accounts?.name || 'Unnamed') })
+    return Array.from(map.entries())
+  }, [trades])
+
+  const strategyOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    trades.forEach((t) => { if (t.strategy_id) map.set(t.strategy_id, t.strategies?.name || 'Unnamed') })
+    return Array.from(map.entries())
+  }, [trades])
+
+  const filteredTrades = useMemo(() => {
+    const min = pnlMin !== '' && !isNaN(Number(pnlMin)) ? Number(pnlMin) : -Infinity
+    const max = pnlMax !== '' && !isNaN(Number(pnlMax)) ? Number(pnlMax) : Infinity
+    return trades.filter((trade) => {
+      if (search && !trade.symbol?.toLowerCase().includes(search.toLowerCase())) return false
+      if (direction !== 'all' && trade.direction !== direction) return false
+      if (status !== 'all' && trade.status !== status) return false
+      if (accountId !== 'all' && trade.account_id !== accountId) return false
+      if (strategyId !== 'all' && trade.strategy_id !== strategyId) return false
+      if (followedRules !== 'all' && String(!!trade.followed_rules) !== followedRules) return false
+      const date = trade.trade_date.slice(0, 10)
+      if (dateFrom && date < dateFrom) return false
+      if (dateTo && date > dateTo) return false
+      if (trade.pnl === null || trade.pnl < min || trade.pnl > max) return false
+      return true
+    })
+  }, [trades, search, direction, status, accountId, strategyId, followedRules, dateFrom, dateTo, pnlMin, pnlMax])
+
+  const resetFilters = () => {
+    setSearch('')
+    setDirection('all')
+    setStatus('all')
+    setAccountId('all')
+    setStrategyId('all')
+    setFollowedRules('all')
+    setDateFrom('')
+    setDateTo('')
+    setPnlMin('')
+    setPnlMax('')
+  }
+
   if (loading) return <div className="p-8 text-center text-muted">Loading trades...</div>
+
+  const inputClass = "px-3 py-2 rounded bg-card-light border border-border text-white text-sm focus:border-primary outline-none w-full"
+  const selectClass = "px-3 py-2 rounded bg-card-light border border-border text-white text-sm focus:border-primary outline-none w-full"
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <button
-          onClick={() => { setEditingTrade(undefined); setModalOpen(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-black font-semibold rounded-lg transition"
-        >
-          <PlusCircle size={18} />
-          New Trade
-        </button>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">Trade History</h1>
+        <div className="flex items-center gap-2">
+          <ExportButton />
+          <button
+            onClick={async () => {
+              const { data: user } = await supabase.auth.getUser()
+              if (!user.user) {
+                setSignInAction('add a new trade')
+                setSignInOpen(true)
+                return
+              }
+              setEditingTrade(undefined)
+              setModalOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-black font-semibold rounded-lg transition"
+          >
+            <PlusCircle size={18} />
+            New Trade
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-lg border border-border p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Search</label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Symbol..."
+              className={inputClass}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Direction</label>
+            <select
+              value={direction}
+              onChange={(e) => setDirection(e.target.value as 'all' | 'long' | 'short')}
+              className={selectClass}
+            >
+              <option value="all">All</option>
+              <option value="long">Long</option>
+              <option value="short">Short</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'all' | 'open' | 'closed')}
+              className={selectClass}
+            >
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Account</label>
+            <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className={selectClass}>
+              <option value="all">All</option>
+              {accountOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Strategy</label>
+            <select value={strategyId} onChange={(e) => setStrategyId(e.target.value)} className={selectClass}>
+              <option value="all">All</option>
+              {strategyOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Followed Rules</label>
+            <select
+              value={followedRules}
+              onChange={(e) => setFollowedRules(e.target.value as 'all' | 'true' | 'false')}
+              className={selectClass}
+            >
+              <option value="all">All</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Date From</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">Date To</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">P&L Min</label>
+            <input type="number" value={pnlMin} onChange={(e) => setPnlMin(e.target.value)} placeholder="0" className={inputClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">P&L Max</label>
+            <input type="number" value={pnlMax} onChange={(e) => setPnlMax(e.target.value)} placeholder="0" className={inputClass} />
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={resetFilters}
+              className="w-full px-4 py-2 text-sm text-muted hover:text-white border border-border rounded bg-card-light hover:bg-card transition"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
@@ -106,18 +283,39 @@ export default function TradeList() {
             </tr>
           </thead>
           <tbody>
-            {trades.length === 0 ? (
+            {filteredTrades.length === 0 ? (
               <tr>
                 <td colSpan={11} className="p-8 text-center text-muted">
-                  No trades yet.{' '}
-                  <button onClick={() => { setEditingTrade(undefined); setModalOpen(true) }} className="text-primary hover:underline">
-                    Add your first trade
-                  </button>
-                  .
+                  {trades.length === 0 ? (
+                    <>
+                      No trades yet.{' '}
+                      <button onClick={async () => {
+                        const { data: user } = await supabase.auth.getUser()
+                        if (!user.user) {
+                          setSignInAction('add a new trade')
+                          setSignInOpen(true)
+                          return
+                        }
+                        setEditingTrade(undefined)
+                        setModalOpen(true)
+                      }} className="text-primary hover:underline">
+                        Add your first trade
+                      </button>
+                      .
+                    </>
+                  ) : (
+                    <>
+                      No trades match your filters.{' '}
+                      <button onClick={resetFilters} className="text-primary hover:underline">
+                        Clear filters
+                      </button>
+                      .
+                    </>
+                  )}
                 </td>
               </tr>
             ) : (
-              trades.map((trade) => (
+              filteredTrades.map((trade) => (
                 <tr key={trade.id} className="border-t border-border hover:bg-card-light/70">
                   <td className="p-4">{formatDate(trade.trade_date)}</td>
                   <td className="p-4 font-semibold text-white">{trade.symbol || '-'}</td>
@@ -162,11 +360,17 @@ export default function TradeList() {
         </table>
       </div>
 
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        action={signInAction}
+      />
+
       <TradeModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         trade={editingTrade}
-        onSaved={loadTrades}
+        onSaved={() => { setModalOpen(false); loadTrades() }}
       />
     </div>
   )
