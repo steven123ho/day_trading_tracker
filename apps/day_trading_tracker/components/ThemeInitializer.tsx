@@ -22,7 +22,34 @@ export default function ThemeInitializer() {
 
     async function load() {
       const { data: user } = await supabase.auth.getUser()
-      if (!user.user) return
+      if (!user.user) {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('fj-theme')
+          if (saved) {
+            try {
+              const t = JSON.parse(saved)
+              if (t.theme) applyTheme(t.theme)
+              if (t.font) document.documentElement.dataset.font = t.font
+              if (t.density && t.density !== 'default') {
+                document.documentElement.dataset.density = t.density
+              } else {
+                document.documentElement.removeAttribute('data-density')
+              }
+              if (t.grid) {
+                document.documentElement.dataset.grid = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-grid')
+              }
+              if (t.contrast) {
+                document.documentElement.dataset.contrast = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-contrast')
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        return
+      }
 
       const { data } = await supabase
         .from('profiles')
@@ -30,7 +57,34 @@ export default function ThemeInitializer() {
         .eq('id', user.user.id)
         .single()
 
-      if (!data?.theme) return
+      if (!data?.theme) {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('fj-theme')
+          if (saved) {
+            try {
+              const t = JSON.parse(saved)
+              if (t.theme) applyTheme(t.theme)
+              if (t.font) document.documentElement.dataset.font = t.font
+              if (t.density && t.density !== 'default') {
+                document.documentElement.dataset.density = t.density
+              } else {
+                document.documentElement.removeAttribute('data-density')
+              }
+              if (t.grid) {
+                document.documentElement.dataset.grid = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-grid')
+              }
+              if (t.contrast) {
+                document.documentElement.dataset.contrast = 'true'
+              } else {
+                document.documentElement.removeAttribute('data-contrast')
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        return
+      }
 
       const t = data.theme as Record<string, any>
       if (t.theme) applyTheme(t.theme)

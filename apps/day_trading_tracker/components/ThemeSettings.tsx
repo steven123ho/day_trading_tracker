@@ -39,6 +39,19 @@ export default function ThemeSettings() {
     async function load() {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('fj-theme')
+          if (saved) {
+            try {
+              const t = JSON.parse(saved)
+              setTheme(t.theme || 'default')
+              setFont(t.font || 'grotesk')
+              setDensity(t.density || 'default')
+              setGrid(!!t.grid)
+              setContrast(!!t.contrast)
+            } catch { /* ignore */ }
+          }
+        }
         setMounted(true)
         return
       }
@@ -56,6 +69,18 @@ export default function ThemeSettings() {
         setDensity(t.density || 'default')
         setGrid(!!t.grid)
         setContrast(!!t.contrast)
+      } else if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('fj-theme')
+        if (saved) {
+          try {
+            const t = JSON.parse(saved)
+            setTheme(t.theme || 'default')
+            setFont(t.font || 'grotesk')
+            setDensity(t.density || 'default')
+            setGrid(!!t.grid)
+            setContrast(!!t.contrast)
+          } catch { /* ignore */ }
+        }
       }
       setMounted(true)
     }
@@ -94,13 +119,16 @@ export default function ThemeSettings() {
       return
     }
 
-    const timeout = setTimeout(async () => {
+    async function save() {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('fj-theme', JSON.stringify(settings))
+      }
+
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) return
-      await supabase.from('profiles').update({ theme: settings }).eq('id', user.user.id)
-    }, 500)
-
-    return () => clearTimeout(timeout)
+      await supabase.from('profiles').upsert({ id: user.user.id, theme: settings }, { onConflict: 'id' })
+    }
+    save()
   }, [settings, mounted, supabase])
 
   const description = {
