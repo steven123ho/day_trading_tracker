@@ -23,7 +23,7 @@ const COLORS = ['#facc15', '#4ade80', '#60a5fa', '#f472b6', '#a78bfa', '#fb923c'
 
 function newNote(x = 20, y = 20): Note {
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: crypto.randomUUID(),
     content: '',
     x,
     y,
@@ -54,12 +54,16 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
   const draggingRef = useRef<{ id: string; startX: number; startY: number; noteX: number; noteY: number } | null>(null)
   const resizingRef = useRef<{ id: string; startW: number; startH: number; startX: number; startY: number } | null>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingNotesRef = useRef<Note[] | null>(null)
   const pendingAddRef = useRef(false)
 
   useEffect(() => {
     loadNotes()
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        if (pendingNotesRef.current) saveNotesToDb(pendingNotesRef.current)
+      }
     }
   }, [])
 
@@ -133,17 +137,20 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
 
   function queueSave(nextNotes: Note[]) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    pendingNotesRef.current = nextNotes
     saveTimeoutRef.current = setTimeout(() => saveNotesToDb(nextNotes), 800)
   }
 
   async function saveNotesToDb(nextNotes: Note[]) {
+    pendingNotesRef.current = null
+    if (nextNotes.length === 0) return
     const { data: session } = await supabase.auth.getUser()
     if (!session.user) return
 
-    for (const note of nextNotes) {
-      await supabase
-        .from('sticky_notes')
-        .upsert({
+    await supabase
+      .from('sticky_notes')
+      .upsert(
+        nextNotes.map((note) => ({
           id: note.id,
           user_id: session.user.id,
           content: note.content,
@@ -155,8 +162,8 @@ export default function StickyNoteBoard({ onNewTrade }: StickyNoteBoardProps) {
           color: note.color,
           transparent: note.transparent,
           z_index: note.z_index,
-        })
-    }
+        }))
+      )
   }
 
   async function deleteNoteFromDb(id: string) {
